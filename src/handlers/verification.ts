@@ -15,19 +15,33 @@ composer.on("chat_member", async (ctx, next) => {
   const update = ctx.chatMember;
   if (!update) return next();
 
-  // Only act on new members joining (not on updates from existing members)
-  // Also skip bots (including the bot itself)
+  // Skip bots (including the bot itself)
   if (update.new_chat_member.user.is_bot) return next();
+
   const oldStatus = update.old_chat_member?.status;
   const newStatus = update.new_chat_member?.status;
+  const chatId = ctx.chat!.id;
+  const userId = update.new_chat_member.user.id;
+
+  const repo = getRepo();
+
+  // Edge case: user leaves the group voluntarily during pending verification.
+  // Clean up the session silently — don't post a false timeout message.
+  if (newStatus === "left" || newStatus === "kicked") {
+    const pendingSess = await repo.getVerificationSession(chatId, userId);
+    if (pendingSess) {
+      await repo.clearVerificationSession(chatId, userId);
+      await repo.updateMember(chatId, userId, { verification_status: "removed" });
+    }
+    return next();
+  }
+
+  // Only act on new members joining (not on updates from existing members)
   if (newStatus !== "member" || oldStatus === "member" || oldStatus === "administrator" || oldStatus === "creator") {
     return next();
   }
 
-  const chatId = ctx.chat!.id;
-  const userId = update.new_chat_member.user.id;
   const userName = update.new_chat_member.user.first_name;
-  const repo = getRepo();
 
   const config = await repo.getConfig(chatId);
   const deadline = now() + config.verification_timeout_ms;
@@ -300,6 +314,7 @@ composer.on("message:text", async (ctx, next) => {
   const userName = ctx.from!.first_name;
   const reason = spamReasons.join(" and ");
   let actionDesc = "";
+  let actionSucceeded = false;
 
   try {
     switch (effectiveAction.action) {
@@ -316,6 +331,7 @@ composer.on("message:text", async (ctx, next) => {
         // Try to delete the spam message
         try { await ctx.api.deleteMessage(chatId, msg.message_id); } catch { /* bot may lack permission */ }
 
+        actionSucceeded = true;
         break;
       }
       case "mute": {
@@ -331,22 +347,26 @@ composer.on("message:text", async (ctx, next) => {
 
         try { await ctx.api.deleteMessage(chatId, msg.message_id); } catch { /* bot may lack permission */ }
 
+        actionSucceeded = true;
         break;
       }
       case "kick": {
         await ctx.api.banChatMember(chatId, userId);
         await ctx.api.unbanChatMember(chatId, userId);
         actionDesc = `🚫 ${userName} was kicked — ${reason}.`;
+        actionSucceeded = true;
         break;
       }
       case "ban": {
         await ctx.api.banChatMember(chatId, userId);
         actionDesc = `🚫 ${userName} was banned — ${reason}.`;
+        actionSucceeded = true;
         break;
       }
     }
   } catch {
     actionDesc = `Tried to ${effectiveAction.action} ${userName} for ${reason} but lacked permissions.`;
+    actionSucceeded = false;
   }
 
   // Post explanation
@@ -356,25 +376,27 @@ composer.on("message:text", async (ctx, next) => {
     // Group reply may fail
   }
 
-  // Audit log
-  const entry = {
-    actor: 0,
-    actor_name: "system",
-    action: effectiveAction.action,
-    target: userId,
-    target_name: userName,
-    time: now(),
-    reason,
-    automatic: true,
-    chat_id: chatId,
-  };
-  await repo.appendAuditLog(chatId, entry);
+  // Audit log — only record successful actions
+  if (actionSucceeded) {
+    const entry = {
+      actor: 0,
+      actor_name: "system",
+      action: effectiveAction.action,
+      target: userId,
+      target_name: userName,
+      time: now(),
+      reason,
+      automatic: true,
+      chat_id: chatId,
+    };
+    await repo.appendAuditLog(chatId, entry);
 
-  // Notify admins (if enabled)
-  try {
-    await notifyAdminsOfEscalation(ctx.api, chatId, entry);
-  } catch {
-    // Non-fatal
+    // Notify admins (if enabled)
+    try {
+      await notifyAdminsOfEscalation(ctx.api, chatId, entry);
+    } catch {
+      // Non-fatal
+    }
   }
 });
 
