@@ -39,7 +39,7 @@ export async function checkMessageRate(
   // (the main key is list-typed; SET on a list key crashes Redis).
   await store.set(key + ":ttl", "_", windowSeconds * 2);
 
-  return keep > maxCount;
+  return keep >= maxCount;
 }
 
 /**

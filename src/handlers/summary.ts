@@ -46,7 +46,7 @@ async function showSummary(ctx: Ctx) {
   const chatId = ctx.chat!.id;
   const repo = getRepo();
 
-  const entries = await repo.getAuditLog(chatId, 100);
+  const entries = await repo.getAuditLog(chatId, 500);
   const totalCount = await repo.getAuditLogCount(chatId);
 
   if (entries.length === 0) {

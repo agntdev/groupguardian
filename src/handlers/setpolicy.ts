@@ -48,9 +48,12 @@ composer.command("setpolicy", async (ctx) => {
       })
       .join(" → ");
 
+    const timeoutSec = config.verification_timeout_ms / 1000;
+
     return [
       "⚙️ Spam policy settings:",
       "",
+      `Verification timeout: ${timeoutSec}s`,
       `Message rate: ${t.message_rate_count} messages in ${t.message_rate_window_s}s`,
       `Duplicate limit: ${t.duplicate_count}`,
       `Escalation: ${escSteps}`,
@@ -66,6 +69,7 @@ composer.command("setpolicy", async (ctx) => {
       "/setpolicy threshold <rate_count> <window_s> <dupe_count> — set thresholds",
       "/setpolicy toggle <action> <on|off> — toggle auto-actions",
       "/setpolicy escalation <step1,step2,...> — configure escalation ladder",
+      "/setpolicy timeout <seconds> — set verification timeout",
       "/setpolicy notify <on|off> — toggle admin notifications",
     ];
   };
@@ -219,6 +223,31 @@ composer.command("setpolicy", async (ctx) => {
     return;
   }
 
+  if (sub === "timeout" && params.length >= 2) {
+    const timeoutSec = parseInt(params[1], 10);
+    if (isNaN(timeoutSec) || timeoutSec < 10 || timeoutSec > 3600) {
+      await ctx.reply("Usage: /setpolicy timeout <seconds>\nTimeout must be between 10 and 3600 seconds.");
+      return;
+    }
+
+    await repo.updateConfig(chatId, { verification_timeout_ms: timeoutSec * 1000 });
+
+    await ctx.reply(`✅ Verification timeout set to ${timeoutSec}s.`);
+
+    await repo.appendAuditLog(chatId, {
+      actor: actorId,
+      actor_name: actorName,
+      action: "config",
+      target: null,
+      target_name: "config",
+      time: now(),
+      reason: `Set verification timeout to ${timeoutSec}s`,
+      automatic: false,
+      chat_id: chatId,
+    });
+    return;
+  }
+
   if (sub === "notify" && params.length >= 2) {
     const state = params[1];
     if (state !== "on" && state !== "off" && state !== "true" && state !== "false" && state !== "1" && state !== "0") {
@@ -230,6 +259,18 @@ composer.command("setpolicy", async (ctx) => {
     await repo.updateConfig(chatId, { admin_notifications: enabled });
 
     await ctx.reply(`✅ Admin notifications: ${enabled ? "on" : "off"}.`);
+
+    await repo.appendAuditLog(chatId, {
+      actor: actorId,
+      actor_name: actorName,
+      action: "config",
+      target: null,
+      target_name: "config",
+      time: now(),
+      reason: `Toggled admin notifications ${enabled ? "on" : "off"}`,
+      automatic: false,
+      chat_id: chatId,
+    });
     return;
   }
 
@@ -264,9 +305,11 @@ composer.callbackQuery("setpolicy:show", async (ctx) => {
       return `${e.action}${dur}`;
     })
     .join(" → ");
+  const timeoutSec = config.verification_timeout_ms / 1000;
   const lines = [
     "⚙️ Spam policy settings:",
     "",
+    `Verification timeout: ${timeoutSec}s`,
     `Message rate: ${t.message_rate_count} messages in ${t.message_rate_window_s}s`,
     `Duplicate limit: ${t.duplicate_count}`,
     `Escalation: ${escSteps}`,
@@ -282,6 +325,7 @@ composer.callbackQuery("setpolicy:show", async (ctx) => {
     "/setpolicy threshold <rate_count> <window_s> <dupe_count>",
     "/setpolicy toggle <action> <on|off>",
     "/setpolicy escalation <step1,step2,...>",
+    "/setpolicy timeout <seconds>",
     "/setpolicy notify <on|off>",
   ];
   try {
