@@ -1,15 +1,21 @@
 import { Composer } from "grammy";
 import { readdirSync } from "node:fs";
 import { createBot, type BotContext } from "./toolkit/index.js";
+import { getRepo, getDataStore } from "./state.js";
 
 // The per-chat session shape (ephemeral conversation state only). Extend as the
 // bot grows. Durable domain data must NOT live here — use the toolkit's
 // persistent storage (see AGENTS.md).
 export interface Session {
-  // example: step?: "awaiting_amount";
+  // Multi-step flow state (used by setwelcome, setrules, setpolicy flows)
+  step?: string;
+  pendingField?: string;
 }
 
 export type Ctx = BotContext<Session>;
+
+// Export repo + store so handlers can import them directly.
+export { getRepo, getDataStore } from "./state.js";
 
 /**
  * buildBot — assembles the bot, AUTO-LOADS every feature handler from
@@ -18,6 +24,10 @@ export type Ctx = BotContext<Session>;
  * Composer — NEVER edit this file (concurrent feature PRs would conflict).
  */
 export async function buildBot(token: string) {
+  // Initialize persistent state before registering handlers
+  const repo = getRepo();
+  const store = getDataStore();
+
   const bot = createBot<Session>(token, {
     initial: () => ({}),
   });
@@ -44,8 +54,16 @@ export async function buildBot(token: string) {
     bot.use(mod.default);
   }
 
-  // No catch-all message handler: this is a group-moderation bot; ordinary
-  // conversation must never trigger replies. Only /start and /help commands
-  // plus button callbacks are handled.
+  // Catch-all fallback for unknown text in private chats.
+  // In group chats, group-moderation handlers handle everything — ordinary
+  // conversation must never trigger replies.
+  bot.on("message:text", async (ctx) => {
+    if (ctx.chat?.type === "private") {
+      await ctx.reply("Sorry, I didn't understand that. Try /help.");
+    }
+    // In groups: silently ignore non-command messages (spam detection runs
+    // in its own middleware registered by the verification handler).
+  });
+
   return bot;
 }
