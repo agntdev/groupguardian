@@ -44,7 +44,8 @@ export async function buildBot(token: string) {
     bot.use(mod.default);
   }
 
-  bot.on("message", (ctx) => ctx.reply("Sorry, I didn't understand that. Try /help."));
-
+  // No catch-all message handler: this is a group-moderation bot; ordinary
+  // conversation must never trigger replies. Only /start and /help commands
+  // plus button callbacks are handled.
   return bot;
 }
