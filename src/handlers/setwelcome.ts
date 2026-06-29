@@ -2,8 +2,43 @@ import { Composer } from "grammy";
 import type { Ctx } from "../bot.js";
 import { getRepo } from "../state.js";
 import { now } from "../lib/index.js";
+import { registerMainMenuItem, inlineButton, inlineKeyboard } from "../toolkit/index.js";
+
+// Make /setwelcome reachable from the /start main menu.
+registerMainMenuItem({ label: "⚙️ Set welcome", data: "setwelcome:show", order: 30 });
 
 const composer = new Composer<Ctx>();
+
+async function showWelcome(ctx: Ctx) {
+  const chatId = ctx.chat!.id;
+  const actorId = ctx.from!.id;
+  const repo = getRepo();
+
+  if (ctx.chat?.type === "private") {
+    await ctx.reply("This command works in group chats only. Add me to a group and make me an admin.");
+    return;
+  }
+
+  try {
+    const admins = await ctx.getChatAdministrators();
+    if (!admins.some((a) => a.user.id === actorId)) {
+      await ctx.reply("Only group admins can use this command.");
+      return;
+    }
+  } catch {
+    await ctx.reply("I need admin permissions in this group to moderate.");
+    return;
+  }
+
+  const config = await repo.getConfig(chatId);
+  const text = `Current welcome message:\n\n${config.welcome_text}\n\nReply with\n/setwelcome <message>\nto change it.`;
+  const back = inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]);
+  try {
+    await ctx.editMessageText(text, { reply_markup: back });
+  } catch {
+    await ctx.reply(text);
+  }
+}
 
 composer.command("setwelcome", async (ctx) => {
   const chatId = ctx.chat!.id;
@@ -53,6 +88,12 @@ composer.command("setwelcome", async (ctx) => {
     automatic: false,
     chat_id: chatId,
   });
+});
+
+// Main menu button — view current welcome message
+composer.callbackQuery("setwelcome:show", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  await showWelcome(ctx);
 });
 
 export default composer;
