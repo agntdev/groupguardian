@@ -2,8 +2,26 @@ import { Composer } from "grammy";
 import type { Ctx } from "../bot.js";
 import { getRepo } from "../state.js";
 import { now } from "../lib/index.js";
+import { registerMainMenuItem, inlineButton, inlineKeyboard } from "../toolkit/index.js";
+
+// Make /setrules reachable from the /start main menu.
+registerMainMenuItem({ label: "📜 Set rules", data: "setrules:show", order: 31 });
 
 const composer = new Composer<Ctx>();
+
+// Main menu button — view current rules
+composer.callbackQuery("setrules:show", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  const repo = getRepo();
+  const config = await repo.getConfig(ctx.chat!.id);
+  const text = `Current rules:\n\n${config.rules_text}\n\nReply with\n/setrules <rules>\nto change them.`;
+  const back = inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]);
+  try {
+    await ctx.editMessageText(text, { reply_markup: back });
+  } catch {
+    await ctx.reply(text);
+  }
+});
 
 composer.command("setrules", async (ctx) => {
   const chatId = ctx.chat!.id;

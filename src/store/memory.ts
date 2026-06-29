@@ -104,10 +104,11 @@ export class MemoryDataStore implements DataStore {
         }
       }
     } else {
-      removed = list.filter((v) => v !== value).length;
-      const newLen = list.length - removed;
+      // count === 0: remove ALL matching values
+      const keep = list.filter((v) => v !== value);
+      removed = list.length - keep.length;
       list.length = 0;
-      while (removed--) list.push(...[]);
+      list.push(...keep);
     }
     return removed;
   }

@@ -1,33 +1,45 @@
 import { Composer } from "grammy";
 import type { Ctx } from "../bot.js";
 import { getRepo } from "../state.js";
-import { paginate } from "../toolkit/index.js";
+import { paginate, registerMainMenuItem } from "../toolkit/index.js";
+
+// Make /log reachable from the /start main menu.
+registerMainMenuItem({ label: "📋 Audit log", data: "log:show", order: 40 });
 
 const composer = new Composer<Ctx>();
 const PER_PAGE = 5;
 
-composer.command("log", async (ctx) => {
+async function checkAdmin(ctx: Ctx): Promise<boolean> {
   const chatId = ctx.chat!.id;
   const actorId = ctx.from!.id;
-  const repo = getRepo();
 
   if (ctx.chat?.type === "private") {
     await ctx.reply("This command works in group chats only. Add me to a group and make me an admin.");
-    return;
+    return false;
   }
 
-  // Check admin permissions
   try {
     const admins = await ctx.getChatAdministrators();
     if (!admins.some((a) => a.user.id === actorId)) {
       await ctx.reply("Only group admins can use this command.");
-      return;
+      return false;
     }
   } catch {
     await ctx.reply("I need admin permissions in this group to moderate.");
-    return;
+    return false;
   }
+  return true;
+}
 
+composer.command("log", async (ctx) => {
+  if (!(await checkAdmin(ctx))) return;
+  await renderLog(ctx, ctx.chat!.id, 0);
+});
+
+// Main menu button handler
+composer.callbackQuery("log:show", async (ctx) => {
+  await ctx.answerCallbackQuery();
+  if (!(await checkAdmin(ctx))) return;
   await renderLog(ctx, ctx.chat!.id, 0);
 });
 

@@ -35,8 +35,9 @@ export async function checkMessageRate(
     await store.ltrim(key, 0, keep - 1);
   }
 
-  // Expire the key after window * 2
-  await store.set(key, "_", windowSeconds * 2);
+  // Set TTL on a separate sentinel key to avoid WRONGTYPE
+  // (the main key is list-typed; SET on a list key crashes Redis).
+  await store.set(key + ":ttl", "_", windowSeconds * 2);
 
   return keep > maxCount;
 }

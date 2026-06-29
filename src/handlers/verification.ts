@@ -4,6 +4,7 @@ import { getRepo, getDataStore } from "../state.js";
 import { inlineButton, inlineKeyboard } from "../toolkit/index.js";
 import { now } from "../lib/index.js";
 import { checkMessageRate, checkDuplicate, checkNewAccountLinks } from "../lib/index.js";
+import { notifyAdminsOfEscalation } from "../lib/notifications.js";
 import type { SpamThresholds, EscalationStep } from "../store/index.js";
 
 const composer = new Composer<Ctx>();
@@ -280,9 +281,19 @@ composer.on("message:text", async (ctx, next) => {
     (effectiveAction.action === "kick" && !toggles.kick_enabled) ||
     (effectiveAction.action === "ban" && !toggles.ban_enabled)
   ) {
-    nextIdx = Math.min(nextIdx + 1, escLen - 1);
+    if (nextIdx >= escLen - 1) break; // no further escalation, all disabled
+    nextIdx++;
     effectiveAction = thresholds.escalation[nextIdx];
-    if (nextIdx >= escLen - 1) break; // at the end, just use whatever we have
+  }
+
+  // If the resolved action is still disabled (all toggles off), skip silently
+  if (
+    (effectiveAction.action === "warn" && !toggles.warn_enabled) ||
+    (effectiveAction.action === "mute" && !toggles.mute_enabled) ||
+    (effectiveAction.action === "kick" && !toggles.kick_enabled) ||
+    (effectiveAction.action === "ban" && !toggles.ban_enabled)
+  ) {
+    return next();
   }
 
   // Execute the action
@@ -346,7 +357,7 @@ composer.on("message:text", async (ctx, next) => {
   }
 
   // Audit log
-  await repo.appendAuditLog(chatId, {
+  const entry = {
     actor: 0,
     actor_name: "system",
     action: effectiveAction.action,
@@ -356,7 +367,15 @@ composer.on("message:text", async (ctx, next) => {
     reason,
     automatic: true,
     chat_id: chatId,
-  });
+  };
+  await repo.appendAuditLog(chatId, entry);
+
+  // Notify admins (if enabled)
+  try {
+    await notifyAdminsOfEscalation(ctx.api, chatId, entry);
+  } catch {
+    // Non-fatal
+  }
 });
 
 export default composer;
