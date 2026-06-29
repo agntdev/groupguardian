@@ -9,5 +9,30 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/mute without reply shows usage",
+    "steps": [
+      {
+        "send": { "text": "/mute", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "Reply to a user's message with /mute <minutes> to mute them." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/mute with reply mutes the user",
+    "steps": [
+      {
+        "send": { "text": "/mute 10 noisy", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "LoudMouth" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "restrictChatMember" },
+          { "method": "sendMessage", "payload": { "text": "🔇 LoudMouth was muted by Admin for 10 min.\nReason: noisy" } }
+        ]
+      }
+    ]
   }
 ]

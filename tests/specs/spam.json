@@ -1,0 +1,56 @@
+[
+  {
+    "name": "New account link triggers warn escalation and is explained to the group",
+    "steps": [
+      {
+        "send": { "join": true, "chatId": 10, "userId": 300, "firstName": "Linker" },
+        "expect": [
+          { "method": "restrictChatMember" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "text": "Check this out https://spam.example.com", "chatType": "supergroup", "chatId": 10, "userId": 300, "firstName": "Linker" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "⚠️ Linker was warned for link from a new account." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Duplicate messages trigger spam escalation and action is explained",
+    "steps": [
+      {
+        "send": { "text": "Buy my product now!", "chatType": "supergroup", "chatId": 10, "userId": 400 },
+        "expect": [
+          { "method": "getChatAdministrators" }
+        ]
+      },
+      {
+        "send": { "text": "Buy my product now!", "chatType": "supergroup", "chatId": 10, "userId": 400 },
+        "expect": [
+          { "method": "getChatAdministrators" }
+        ]
+      },
+      {
+        "send": { "text": "Buy my product now!", "chatType": "supergroup", "chatId": 10, "userId": 400 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "⚠️ Test was warned for repeating the same message." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Admin messages are exempt from spam detection",
+    "steps": [
+      {
+        "send": { "text": "Check https://spam.example.com", "chatType": "supergroup", "chatId": 10, "userId": 1 },
+        "expect": [
+          { "method": "getChatAdministrators" }
+        ]
+      }
+    ]
+  }
+]

@@ -9,5 +9,29 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/setrules in group shows current rules",
+    "steps": [
+      {
+        "send": { "text": "/setrules", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/setrules with text updates rules",
+    "steps": [
+      {
+        "send": { "text": "/setrules No spamming. Be kind.", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ Rules updated:\n\nNo spamming. Be kind." } }
+        ]
+      }
+    ]
   }
 ]

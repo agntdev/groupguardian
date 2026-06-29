@@ -9,5 +9,41 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/setpolicy in group shows current policy settings",
+    "steps": [
+      {
+        "send": { "text": "/setpolicy", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/setpolicy timeout updates verification timeout",
+    "steps": [
+      {
+        "send": { "text": "/setpolicy timeout 120", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ Verification timeout set to 120s." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/setpolicy toggle disables a spam action",
+    "steps": [
+      {
+        "send": { "text": "/setpolicy toggle ban off", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ Auto-ban: off." } }
+        ]
+      }
+    ]
   }
 ]

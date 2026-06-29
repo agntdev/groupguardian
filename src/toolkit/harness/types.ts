@@ -22,8 +22,9 @@ export interface ExpectedCall {
 /** What the user does in a step: a text message (a `/command` gets a
  *  bot_command entity automatically), a callback-button tap, or a raw Update. */
 export type SendShorthand =
-  | { text: string; chatId?: number; userId?: number }
-  | { callback: string; chatId?: number; userId?: number; messageId?: number }
+  | { text: string; chatId?: number; userId?: number; chatType?: "private" | "group" | "supergroup"; replyToMessageId?: number; replyToUserId?: number; replyToFirstName?: string; firstName?: string }
+  | { callback: string; chatId?: number; userId?: number; messageId?: number; chatType?: "private" | "group" | "supergroup" }
+  | { join: true; chatId?: number; userId?: number; firstName?: string }
   | { update: Update };
 
 export interface SpecStep {

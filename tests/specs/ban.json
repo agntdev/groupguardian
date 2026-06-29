@@ -9,5 +9,30 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/ban without reply shows usage",
+    "steps": [
+      {
+        "send": { "text": "/ban", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "Reply to a user's message with /ban <reason> to ban them." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/ban with reply bans the user",
+    "steps": [
+      {
+        "send": { "text": "/ban spammer", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "BadUser" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "banChatMember" },
+          { "method": "sendMessage", "payload": { "text": "🚫 BadUser was banned by Admin.\nReason: spammer" } }
+        ]
+      }
+    ]
   }
 ]

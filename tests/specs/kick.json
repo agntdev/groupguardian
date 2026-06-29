@@ -9,5 +9,31 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/kick without reply shows usage",
+    "steps": [
+      {
+        "send": { "text": "/kick", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "Reply to a user's message with /kick <reason> to kick them." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/kick with reply kicks the user",
+    "steps": [
+      {
+        "send": { "text": "/kick troublemaker", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "Trouble" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "banChatMember" },
+          { "method": "unbanChatMember" },
+          { "method": "sendMessage", "payload": { "text": "🚫 Trouble was kicked by Admin.\nReason: troublemaker" } }
+        ]
+      }
+    ]
   }
 ]

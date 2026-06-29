@@ -1,5 +1,5 @@
 import type { Bot, Transformer } from "grammy";
-import { HARNESS_BOT_ID, callbackUpdate, textUpdate } from "./updates.js";
+import { HARNESS_BOT_ID, callbackUpdate, textUpdate, groupTextUpdate, memberJoinUpdate, groupCallbackUpdate } from "./updates.js";
 import type {
   BotSpec,
   CapturedCall,
@@ -86,7 +86,31 @@ function compareStep(expected: ExpectedCall[], captured: CapturedCall[], strict:
 function shorthandToUpdate(send: SendShorthand, updateId: number) {
   if ("update" in send) return send.update;
   if ("text" in send) {
+    if (send.chatType === "group" || send.chatType === "supergroup") {
+      return groupTextUpdate(updateId, send.text, {
+        chatId: send.chatId,
+        userId: send.userId,
+        replyToMessageId: send.replyToMessageId,
+        replyToUserId: send.replyToUserId,
+        replyToFirstName: send.replyToFirstName,
+        firstName: send.firstName,
+      });
+    }
     return textUpdate(updateId, send.text, { chatId: send.chatId, userId: send.userId });
+  }
+  if ("join" in send) {
+    return memberJoinUpdate(updateId, {
+      chatId: send.chatId,
+      userId: send.userId,
+      firstName: send.firstName,
+    });
+  }
+  if (send.chatType === "group" || send.chatType === "supergroup") {
+    return groupCallbackUpdate(updateId, send.callback, {
+      chatId: send.chatId,
+      userId: send.userId,
+      messageId: send.messageId,
+    });
   }
   return callbackUpdate(updateId, send.callback, {
     chatId: send.chatId,
@@ -112,6 +136,24 @@ function stubResult(method: string, payload: Record<string, unknown>, msgId: num
       ...(typeof payload.text === "string" ? { text: payload.text } : {}),
     };
   }
+  // Moderation API stubs — return sensible structures so handlers don't crash
+  if (method === "getChatAdministrators") {
+    // Return a list that includes an admin matching the caller's context.
+    // By default, userId=1 (the test default) is an admin.
+    return [
+      {
+        user: { id: 1, is_bot: false, first_name: "Admin" },
+        status: "creator",
+        can_be_edited: false,
+        is_anonymous: false,
+      },
+    ];
+  }
+  if (method === "restrictChatMember") return true;
+  if (method === "banChatMember") return true;
+  if (method === "unbanChatMember") return true;
+  if (method === "deleteMessage") return true;
+  if (method === "setMyCommands") return true;
   return true;
 }
 

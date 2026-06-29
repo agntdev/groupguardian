@@ -1,12 +1,44 @@
 [
   {
-    "name": "verification:confirm callback acknowledges verification",
+    "name": "New member joins group, gets restricted and welcome with verify button",
+    "steps": [
+      {
+        "send": { "join": true, "chatId": 10, "userId": 100, "firstName": "Alice" },
+        "expect": [
+          { "method": "restrictChatMember" },
+          { "method": "sendMessage", "payload": { "text": "Welcome to the group! Please verify you're human by tapping the button below.\n\nYou have 60 seconds to verify." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "User clicks verify button, gets restrictions lifted and confirmed",
+    "steps": [
+      {
+        "send": { "join": true, "chatId": 10, "userId": 200, "firstName": "Bob" },
+        "expect": [
+          { "method": "restrictChatMember" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "callback": "verification:confirm", "chatType": "supergroup", "chatId": 10, "userId": 200 },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "restrictChatMember" },
+          { "method": "editMessageText", "payload": { "text": "✅ Verified — welcome to the group!" } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Verify callback with no pending session shows helpful message",
     "steps": [
       {
         "send": { "callback": "verification:confirm" },
         "expect": [
           { "method": "answerCallbackQuery" },
-          { "method": "editMessageText" }
+          { "method": "editMessageText", "payload": { "text": "You're already verified, or your verification expired. Welcome!" } }
         ]
       }
     ]
