@@ -1,0 +1,14 @@
+[
+  {
+    "name": "verification:confirm callback acknowledges verification",
+    "steps": [
+      {
+        "send": { "callback": "verification:confirm" },
+        "expect": [
+          { "method": "answerCallbackQuery" },
+          { "method": "editMessageText" }
+        ]
+      }
+    ]
+  }
+]

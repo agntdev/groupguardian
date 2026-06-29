@@ -1,0 +1,13 @@
+[
+  {
+    "name": "/summary shows error in private chat",
+    "steps": [
+      {
+        "send": { "text": "/summary" },
+        "expect": [
+          { "method": "sendMessage", "payload": { "text": "This command works in group chats only. Add me to a group and make me an admin." } }
+        ]
+      }
+    ]
+  }
+]
