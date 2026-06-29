@@ -17,6 +17,9 @@ export type Ctx = BotContext<Session>;
 // Export repo + store so handlers can import them directly.
 export { getRepo, getDataStore } from "./state.js";
 
+// Re-import for state reset at the top of buildBot.
+import { _resetState } from "./state.js";
+
 /**
  * buildBot — assembles the bot, AUTO-LOADS every feature handler from
  * src/handlers/, then registers the global fallback. Does NOT start the bot.
@@ -24,6 +27,10 @@ export { getRepo, getDataStore } from "./state.js";
  * Composer — NEVER edit this file (concurrent feature PRs would conflict).
  */
 export async function buildBot(token: string) {
+  // Reset state for isolated test-harness replays (pure module-level singletons
+  // leak data across specs if not reset here).
+  _resetState();
+
   // Initialize persistent state before registering handlers
   const repo = getRepo();
   const store = getDataStore();
