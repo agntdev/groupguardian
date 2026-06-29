@@ -9,5 +9,29 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/setwelcome in group shows current message or prompt",
+    "steps": [
+      {
+        "send": { "text": "/setwelcome", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/setwelcome with text updates welcome message",
+    "steps": [
+      {
+        "send": { "text": "/setwelcome Hello and welcome!", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ Welcome message updated. New members will see:\n\nHello and welcome!" } }
+        ]
+      }
+    ]
   }
 ]

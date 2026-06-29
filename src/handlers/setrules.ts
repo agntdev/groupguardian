@@ -9,10 +9,28 @@ registerMainMenuItem({ label: "📜 Set rules", data: "setrules:show", order: 31
 
 const composer = new Composer<Ctx>();
 
-// Main menu button — view current rules
+// Main menu button — view current rules (admin only)
 composer.callbackQuery("setrules:show", async (ctx) => {
   await ctx.answerCallbackQuery();
+  const actorId = ctx.from!.id;
   const repo = getRepo();
+
+  if (ctx.chat?.type === "private") {
+    await ctx.reply("This command works in group chats only. Add me to a group and make me an admin.");
+    return;
+  }
+
+  try {
+    const admins = await ctx.getChatAdministrators();
+    if (!admins.some((a) => a.user.id === actorId)) {
+      await ctx.reply("Only group admins can use this command.");
+      return;
+    }
+  } catch {
+    await ctx.reply("I need admin permissions in this group to moderate.");
+    return;
+  }
+
   const config = await repo.getConfig(ctx.chat!.id);
   const text = `Current rules:\n\n${config.rules_text}\n\nReply with\n/setrules <rules>\nto change them.`;
   const back = inlineKeyboard([[inlineButton("⬅️ Back to menu", "menu:main")]]);

@@ -9,5 +9,17 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/trust in group with reply marks user as trusted",
+    "steps": [
+      {
+        "send": { "text": "/trust", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "GoodUser" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ GoodUser is now trusted — they'll be exempt from automated moderation." } }
+        ]
+      }
+    ]
   }
 ]

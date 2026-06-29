@@ -9,5 +9,36 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/untrust in group for non-trusted user shows not trusted",
+    "steps": [
+      {
+        "send": { "text": "/untrust", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "Someone" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "Someone isn't trusted." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/untrust after trusting revokes trusted status",
+    "steps": [
+      {
+        "send": { "text": "/trust", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "ToUntrust" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "text": "/untrust", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 6, "replyToUserId": 200, "replyToFirstName": "ToUntrust" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "🔓 ToUntrust is no longer trusted — automated moderation now applies." } }
+        ]
+      }
+    ]
   }
 ]

@@ -8,6 +8,7 @@ import type {
   AuditLogEntry,
 } from "./domain.js";
 import { DEFAULT_CHAT_CONFIG, MAX_AUDIT_LOG_ENTRIES } from "./domain.js";
+import { now } from "../lib/clock.js";
 
 // ── Key helpers ──────────────────────────────────────────────────────────
 // Every key uses deterministic IDs — never enumerate keyspace.
@@ -97,7 +98,7 @@ export class Repo {
     session: VerificationSession,
   ): Promise<void> {
     // Expire after the deadline + 10s buffer
-    const ttl = Math.ceil((session.deadline - Date.now()) / 1000) + 10;
+    const ttl = Math.ceil((session.deadline - now()) / 1000) + 10;
     await this.store.setJSON(
       verificationKey(chatId, session.user_id),
       session,

@@ -1,0 +1,27 @@
+[
+  {
+    "name": "Trusted users are exempt from automated spam actions",
+    "steps": [
+      {
+        "send": { "join": true, "chatId": 10, "userId": 500, "firstName": "TrustedGuy" },
+        "expect": [
+          { "method": "restrictChatMember" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "text": "/trust", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 10, "replyToUserId": 500, "replyToFirstName": "TrustedGuy" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "✅ TrustedGuy is now trusted — they'll be exempt from automated moderation." } }
+        ]
+      },
+      {
+        "send": { "text": "Check https://spam.example.com", "chatType": "supergroup", "chatId": 10, "userId": 500, "firstName": "TrustedGuy" },
+        "expect": [
+          { "method": "getChatAdministrators" }
+        ]
+      }
+    ]
+  }
+]

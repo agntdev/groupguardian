@@ -9,5 +9,36 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/log in group with no history shows empty state",
+    "steps": [
+      {
+        "send": { "text": "/log", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "editMessageText" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/log shows audit entries after a moderation action",
+    "steps": [
+      {
+        "send": { "text": "/warn spamming", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "Spammer" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "text": "/log", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "editMessageText" }
+        ]
+      }
+    ]
   }
 ]

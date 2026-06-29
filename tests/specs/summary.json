@@ -9,5 +9,36 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/summary in group with no activity shows empty state",
+    "steps": [
+      {
+        "send": { "text": "/summary", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "No moderation activity yet. Activity will show here once the bot starts moderating." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/summary in group with activity shows report",
+    "steps": [
+      {
+        "send": { "text": "/warn spamming", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Admin", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "Spammer" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      },
+      {
+        "send": { "text": "/summary", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage" }
+        ]
+      }
+    ]
   }
 ]

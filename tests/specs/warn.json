@@ -9,5 +9,29 @@
         ]
       }
     ]
+  },
+  {
+    "name": "/warn in group without reply shows usage instruction",
+    "steps": [
+      {
+        "send": { "text": "/warn", "chatType": "supergroup", "chatId": 10 },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "Reply to a user's message with /warn to warn them." } }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "/warn in group with reply warns the target and records audit log",
+    "steps": [
+      {
+        "send": { "text": "/warn spamming", "chatType": "supergroup", "chatId": 10, "userId": 1, "firstName": "Test", "replyToMessageId": 5, "replyToUserId": 200, "replyToFirstName": "Spammer" },
+        "expect": [
+          { "method": "getChatAdministrators" },
+          { "method": "sendMessage", "payload": { "text": "⚠️ Spammer was warned by Test.\nReason: spamming\nTotal warnings: 1" } }
+        ]
+      }
+    ]
   }
 ]
